@@ -340,9 +340,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
             SetWindowText(lockUnlockbuttonHwnd, L"Lock Volume");
         }
 
-        bool isClickable = 0;
-
-        if (strText == strPIN) isClickable = 1;
+        const bool isClickable = (strText == strPIN);
 
         EnableWindow(slider, !isVolumeLocked);
         EnableWindow(lockUnlockbuttonHwnd, isClickable);
