@@ -29,40 +29,40 @@
 #include <functiondiscoverykeys_devpkey.h>
 
 // Window size
-static const int windowWidth  = 512;
-static const int windowHeight = 256;
+constexpr int windowWidth{512};
+constexpr int windowHeight{256};
 
 // Window position
 static struct { float x; float y; } windowPos;
 
 // Volume lock/unlock status
-static bool isVolumeLocked = 0;
+static bool isVolumeLocked{false};
 
 // PIN textbox
 HWND textBox;
 
 // PIN string
-static std::string strText = {};
-static std::string strPIN  = {};
+static std::string strText{};
+static std::string strPIN{};
 
-const uint8_t x = 30;
+constexpr uint8_t x{30};
 
 // Set master volume
 static HRESULT SetMasterVolume(float volume)
 {
     // Initialize COM library
-    HRESULT hr = CoInitialize(NULL);
+    HRESULT hr{CoInitialize(NULL)};
 
     // Create device enumerator
-    IMMDeviceEnumerator* pEnumerator = NULL;
+    IMMDeviceEnumerator* pEnumerator{};
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
 
     // Get the default audio endpoint
-    IMMDevice* pDevice = NULL;
+    IMMDevice* pDevice{};
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
 
     // Activate the audio endpoint volume interface
-    IAudioEndpointVolume* pEndpointVolume = NULL;
+    IAudioEndpointVolume* pEndpointVolume{};
     hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void**)&pEndpointVolume);
 
     // Set the master volume level
@@ -80,21 +80,21 @@ static HRESULT SetMasterVolume(float volume)
 // Get master volume
 static float GetMasterVolume()
 {
-    float volume = 0.0f;
+    float volume{0.0f};
 
     // Initialize COM library
-    HRESULT hr = CoInitialize(NULL);
+    HRESULT hr{CoInitialize(NULL)};
 
     // Create device enumerator
-    IMMDeviceEnumerator* pEnumerator = NULL;
+    IMMDeviceEnumerator* pEnumerator{};
     hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
 
     // Get the default audio endpoint
-    IMMDevice* pDevice = NULL;
+    IMMDevice* pDevice{};
     hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
 
     // Activate the audio endpoint volume interface
-    IAudioEndpointVolume* pEndpointVolume = NULL;
+    IAudioEndpointVolume* pEndpointVolume{};
     hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void**)&pEndpointVolume);
 
     // Get the master volume level
@@ -119,13 +119,13 @@ static bool CheckCollisionMouseRect(POINT mousePos, RECT rect)
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 // Windows API that contains information for creating and manipulating an icon in the system tray (notification area)
-NOTIFYICONDATA nid;
+NOTIFYICONDATA nid{};
 
 // Entry point of the application
 int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPSTR lpCmdLine, _In_ int nCmdShow)
 {
     // Create the window class
-    WNDCLASSW wc = {};
+    WNDCLASSW wc{};
 
     wc.lpfnWndProc   = WindowProc;
     wc.hInstance     = hInstance;
@@ -135,7 +135,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     RegisterClassW(&wc);
 
     // Create the window
-    HWND hwnd = CreateWindowExW(
+    const HWND hwnd{ CreateWindowExW(
         0,
         wc.lpszClassName,
         L"Volume Control Plus",
@@ -143,45 +143,45 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
         // Window position and size 
         0, 0, windowWidth, windowHeight,
-   
+
         NULL,
         NULL,
         hInstance,
         NULL
-    );
+    )};
 
     // Create lock/unlock volume button
-    HWND lockUnlockbuttonHwnd = CreateWindow(
+    const HWND lockUnlockbuttonHwnd{CreateWindow(
         L"BUTTON",
         L"Lock Volume",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 
         // Lock/unlock volume button position and size
         x + 250, 50, 120, 30,
-        
+
         hwnd,
         (HMENU)1,
         GetModuleHandle(NULL),
         NULL
-    );
+    )};
 
     // Create the slider control
-    HWND slider = CreateWindow(
-        TRACKBAR_CLASS, 
-        L"", 
+    const HWND slider{ CreateWindow(
+        TRACKBAR_CLASS,
+        L"",
         WS_CHILD | WS_VISIBLE | TBS_HORZ,
 
         // Volume slider position and size
         x + 40, 50, 200, 30,
-        
-        hwnd, 
-        NULL, 
-        hInstance, 
+
+        hwnd,
+        NULL,
+        hInstance,
         NULL
-    );
+    )};
 
     // Create set PIN button
-    HWND setPINbuttonHwnd = CreateWindow(
+    const HWND setPINbuttonHwnd{CreateWindow(
         L"BUTTON",
         L"Set PIN",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
@@ -193,10 +193,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         (HMENU)2,
         GetModuleHandle(NULL),
         NULL
-    );
+    )};
 
     // Current volume
-    float currentVolume = GetMasterVolume();
+    float currentVolume{GetMasterVolume()};
     
     // Set the range of the slider
     SendMessage(slider, TBM_SETRANGE, TRUE, MAKELPARAM(0, 100));
@@ -205,11 +205,11 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     SendMessage(slider, TBM_SETPOS, TRUE, static_cast<LPARAM>(currentVolume * 100.0f));
 
     // Get the monitor size
-    MONITORINFO monitorInfo;
+    MONITORINFO monitorInfo{};
     monitorInfo.cbSize = sizeof(MONITORINFO);
 
     // Windows API represents a handle to a physical display monitor
-    HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY);
+    const HMONITOR hMonitor{MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY)};
 
     if (hMonitor != NULL)
     {
@@ -231,7 +231,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     }
 
     // Load the app icon from the file
-    HICON hCustomIcon = (HICON)LoadImage(NULL, L"lock.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+    const HICON hCustomIcon{(HICON)LoadImage(NULL, L"lock.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE)};
 
     // Initialize the NOTIFYICONDATA structure
     memset(&nid, 0, sizeof(NOTIFYICONDATA));
@@ -244,18 +244,18 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     lstrcpy(nid.szTip, L"Volume Control Plus");
 
     // Set the icon for the application window
-    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hCustomIcon); // Set the large icon
+    SendMessage(hwnd, WM_SETICON, ICON_BIG, (LPARAM)hCustomIcon);   // Set the large icon
     SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hCustomIcon); // Set the small icon
 
     // Create a white HBITMAP
-    HDC     hdcScreen  = GetDC(NULL);
-    HDC     hdcMem     = CreateCompatibleDC(hdcScreen);
-    HBITMAP hBitmap    = CreateCompatibleBitmap(hdcScreen, 500, 300);
-    HGDIOBJ hOldBitmap = SelectObject(hdcMem, hBitmap);
-    HBRUSH  hBrush     = CreateSolidBrush(RGB(255, 255, 255));
+    const HDC     hdcScreen{GetDC(NULL)};
+    const HDC     hdcMem{CreateCompatibleDC(hdcScreen)};
+    const HBITMAP hBitmap{CreateCompatibleBitmap(hdcScreen, 500, 300)};
+    const HGDIOBJ hOldBitmap{SelectObject(hdcMem, hBitmap)};
+    const HBRUSH  hBrush{CreateSolidBrush(RGB(255, 255, 255))};
 
     // Define the size of the white bitmap
-    RECT rect = { 0, 0, 500, 300 };
+    const RECT rect{ 0, 0, 500, 300 };
     FillRect(hdcMem, &rect, hBrush);
 
     SelectObject(hdcMem, hOldBitmap);
@@ -263,25 +263,25 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     ReleaseDC(NULL, hdcScreen);
 
     // Define the blend function for alpha blending (opaque white)
-    BLENDFUNCTION blend = {};
+    BLENDFUNCTION blend{};
 
     blend.BlendOp             = AC_SRC_OVER;
     blend.SourceConstantAlpha = 255; // 255 (opaque)
     blend.AlphaFormat         = AC_SRC_ALPHA;
 
     // Update the layered window with the white bitmap
-    POINT ptZero     = { 0 };
-    SIZE  size       = { 500, 300 };
-    POINT ptLocation = { 0, 0 };
+    POINT ptZero{};
+    SIZE  size{500, 300};
+    POINT ptLocation{0, 0};
 
     // Show and update the window
     ShowWindow(hwnd, nCmdShow);
     UpdateWindow(hwnd);
 
     // Message loop
-    MSG msg = {};
+    MSG msg{};
 
-    while (1)
+    while (true)
     {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
         {
@@ -296,9 +296,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
         if (isVolumeLocked)
         {
-            currentVolume   = GetMasterVolume();
-            int sliderValue = SendMessage(slider, TBM_GETPOS, 0, 0);
-            currentVolume   = static_cast<float>(sliderValue) / 100.0f;
+            const float sliderValue{static_cast<float>(SendMessage(slider, TBM_GETPOS, 0, 0))};
+            currentVolume = sliderValue / 100.0f;
 
             SetMasterVolume(currentVolume);
 
@@ -307,17 +306,16 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         else if (!isVolumeLocked)
         {
             // Get mouse position
-            POINT mousePos;
+            POINT mousePos{};
             GetCursorPos(&mousePos);
             ScreenToClient(hwnd, &mousePos);
 
-            RECT sliderRect = { x + 40, 50, x + 240, 80 };
+            const RECT sliderRect{x + 40, 50, x + 240, 80};
 
             if (CheckCollisionMouseRect(mousePos, sliderRect))
             {
-                currentVolume   = GetMasterVolume();
-                int sliderValue = SendMessage(slider, TBM_GETPOS, 0, 0);
-                currentVolume   = static_cast<float>(sliderValue) / 100.0f;
+                const float sliderValue{static_cast<float>(SendMessage(slider, TBM_GETPOS, 0, 0))};
+                currentVolume = sliderValue / 100.0f;
 
                 SetMasterVolume(currentVolume);
             }
@@ -327,7 +325,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
                 // Assuming currentVolume is a float value between 0.0 and 1.0 representing the volume level
                 // Convert it to an integer value between 0 and 100 for the trackbar
-                int sliderValue = static_cast<int>(currentVolume * 100);
+                const int sliderValue{static_cast<int>(currentVolume * 100)};
 
                 // Set the position of the slider
                 SendMessage(slider, TBM_SETPOS, TRUE, sliderValue);
@@ -432,18 +430,15 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         // the Windows API that is used in painting operations. 
         // It is used in conjunction with the BeginPaint and EndPaint 
         // functions for handling the painting of a window or client area.
-        PAINTSTRUCT ps = {};
+        PAINTSTRUCT ps{};
         
         // The HDC (Handle to Device Context) is a data type in the Windows API 
         // that represents a handle to a device context. A device context is an abstraction 
         // that allows an application to interact with a device, such as a display or printer, 
         // for drawing graphics or performing other operations.
-        HDC hdc = {};
-
-        hdc = BeginPaint(hwnd, &ps);
-
-        const TCHAR* text0 = L"Set Volume Level:";
-        const TCHAR* text1 = L"Set PIN:";
+        const HDC hdc{BeginPaint(hwnd, &ps)};
+        const TCHAR* text0{L"Set Volume Level:"};
+        const TCHAR* text1{L"Set PIN:"};
 
         TextOut(hdc, x + 10, 14, text0, lstrlen(text0));
         TextOut(hdc, x + 10, 124, text1, lstrlen(text1));
