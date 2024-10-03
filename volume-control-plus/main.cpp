@@ -1,4 +1,4 @@
-// Copyright (c) 2024 Wildan R Wijanarko (@wildan9)
+// Copyright (c) 2024 Wildan R Wijanarko
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files(the "Software"), to deal
@@ -37,6 +37,9 @@ static struct { float x; float y; } windowPos;
 
 // Volume lock/unlock status
 static bool isVolumeLocked{false};
+
+// Volume mute status
+static bool isMuted{false};
 
 // PIN textbox
 HWND textBox;
@@ -115,6 +118,64 @@ static bool CheckCollisionMouseRect(POINT mousePos, RECT rect)
     return PtInRect(&rect, mousePos);
 }
 
+static bool IsMuted()
+{
+    // Initialize COM library
+    HRESULT hr{CoInitialize(NULL)};
+
+    // Create device enumerator
+    IMMDeviceEnumerator* pEnumerator{};
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+
+    // Get the default audio endpoint
+    IMMDevice* pDevice{};
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+
+    // Activate the audio endpoint volume interface
+    IAudioEndpointVolume* pEndpointVolume{};
+    hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void**)&pEndpointVolume);
+
+    // Get mute state
+    BOOL mute{};
+    hr = pEndpointVolume->GetMute(&mute);
+
+    // Release resources
+    pEndpointVolume->Release();
+    pDevice->Release();
+    pEnumerator->Release();
+    CoUninitialize();
+
+    // Return mute state as bool
+    return mute == TRUE;
+}
+
+static void SetMute(bool mute)
+{
+    // Initialize COM library
+    HRESULT hr{CoInitialize(NULL)};
+
+    // Create device enumerator
+    IMMDeviceEnumerator* pEnumerator{};
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pEnumerator);
+
+    // Get the default audio endpoint
+    IMMDevice* pDevice{};
+    hr = pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice);
+
+    // Activate the audio endpoint volume interface
+    IAudioEndpointVolume* pEndpointVolume{};
+    hr = pDevice->Activate(__uuidof(IAudioEndpointVolume), CLSCTX_ALL, NULL, (void**)&pEndpointVolume);
+
+    // Set mute state
+    hr = pEndpointVolume->SetMute(mute ? TRUE : FALSE, NULL);
+
+    // Release resources
+    pEndpointVolume->Release();
+    pDevice->Release();
+    pEnumerator->Release();
+    CoUninitialize();
+}
+
 // Declare the window procedure
 static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
@@ -135,7 +196,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     RegisterClassW(&wc);
 
     // Create the window
-    const HWND hwnd{ CreateWindowExW(
+    const HWND hwnd{CreateWindowExW(
         0,
         wc.lpszClassName,
         L"Volume Control Plus",
@@ -166,7 +227,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     )};
 
     // Create the slider control
-    const HWND slider{ CreateWindow(
+    const HWND slider{CreateWindow(
         TRACKBAR_CLASS,
         L"",
         WS_CHILD | WS_VISIBLE | TBS_HORZ,
@@ -301,6 +362,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
             SetMasterVolume(currentVolume);
 
+            SetMute(isMuted);
+
             SetWindowText(lockUnlockbuttonHwnd, L"Unlock Volume");
         }
         else if (!isVolumeLocked)
@@ -338,7 +401,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
             SetWindowText(lockUnlockbuttonHwnd, L"Lock Volume");
         }
 
-        const bool isClickable = (strText == strPIN);
+        const bool isClickable{(strText == strPIN)};
 
         EnableWindow(slider, !isVolumeLocked);
         EnableWindow(lockUnlockbuttonHwnd, isClickable);
@@ -395,6 +458,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         if (LOWORD(wParam) == 1 && HIWORD(wParam) == BN_CLICKED)
         {
             isVolumeLocked = !isVolumeLocked;
+            isMuted = IsMuted();
         }
 
         if (LOWORD(wParam) == 2 && HIWORD(wParam) == BN_CLICKED)
@@ -416,7 +480,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     case WM_GETMINMAXINFO:
     {
         // Prevent resizing to a smaller size
-        MINMAXINFO* pMMI = (MINMAXINFO*)lParam;
+        MINMAXINFO* pMMI{(MINMAXINFO*)lParam};
         pMMI->ptMinTrackSize.x = windowWidth;
         pMMI->ptMinTrackSize.y = windowHeight;
 
