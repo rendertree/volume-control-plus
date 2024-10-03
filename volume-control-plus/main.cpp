@@ -41,8 +41,14 @@ static bool isVolumeLocked{false};
 // Volume mute status
 static bool isMuted{false};
 
+// Lock the mute toggle
+static bool muteLock{true};
+
 // PIN textbox
-HWND textBox;
+HWND textBox{};
+
+// Mute lock checkbox
+HWND hCheckbox{};
 
 // PIN string
 static std::string strText{};
@@ -362,7 +368,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
             SetMasterVolume(currentVolume);
 
-            SetMute(isMuted);
+            if (muteLock)
+            {
+                SetMute(isMuted);
+            }
 
             SetWindowText(lockUnlockbuttonHwnd, L"Unlock Volume");
         }
@@ -450,6 +459,22 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             NULL
         );
 
+        hCheckbox = CreateWindowEx(
+            0, L"BUTTON",  
+            L"Lock Mute Toggle",   
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_CHECKBOX,
+
+            // Position and size
+            340, 170, 140, 30,
+            
+            hwnd,          
+            NULL,          
+            (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), 
+            NULL          
+        );
+        
+        SendMessage(hCheckbox, BM_SETCHECK, BST_CHECKED, 0);
+
     } break;
     // WM_COMMAND: This message is sent to a window when the user selects a menu item, 
     // clicks a button, or performs an action that generates a command from a control or menu.
@@ -472,6 +497,13 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             char buffer[256];
             GetWindowTextA(textBox, buffer, sizeof(buffer));
             strText = buffer;
+        }
+
+        if ((HWND)lParam == hCheckbox) 
+        {
+            muteLock = !muteLock;
+
+            SendMessage(hCheckbox, BM_SETCHECK, muteLock ? BST_CHECKED : BST_UNCHECKED, 0);   
         }
 
     } break;
