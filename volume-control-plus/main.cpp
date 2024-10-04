@@ -268,7 +268,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         L"Set Max Volume",
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 
-        // Set PIN button position and size
+        // Position and size
         x + 170, 150, 120, 30,
 
         hwnd,
