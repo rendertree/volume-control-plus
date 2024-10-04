@@ -29,8 +29,8 @@
 #include <functiondiscoverykeys_devpkey.h>
 
 // Window size
-constexpr int windowWidth{512};
-constexpr int windowHeight{256};
+constexpr int windowWidth{580};
+constexpr int windowHeight{380};
 
 // Window position
 static struct { float x; float y; } windowPos;
@@ -44,16 +44,29 @@ static bool isMuted{false};
 // Lock the mute toggle
 static bool muteLock{true};
 
+// Max volume
+static float maxVolume{0.4f};
+
 // PIN textbox
-HWND textBox{};
+HWND pinTextBox{};
+
+// Max volume textbox
+HWND maxVolumeTextBox{};
 
 // Mute lock checkbox
-HWND hCheckbox{};
+HWND hMuteToggleCheckbox{};
+
+// Mute checkbox
+HWND hMuteCheckbox{};
 
 // PIN string
 static std::string strText{};
 static std::string strPIN{};
 
+// Max volume string
+static std::string strMaxVolume{};
+
+constexpr float minVolume{0.0f};
 constexpr uint8_t x{30};
 
 // Set master volume
@@ -124,6 +137,7 @@ static bool CheckCollisionMouseRect(POINT mousePos, RECT rect)
     return PtInRect(&rect, mousePos);
 }
 
+// Returns true if system audio is muted
 static bool IsMuted()
 {
     // Initialize COM library
@@ -155,6 +169,7 @@ static bool IsMuted()
     return mute == TRUE;
 }
 
+// Mutes/unmutes system audio based on the mute parameter
 static void SetMute(bool mute)
 {
     // Initialize COM library
@@ -247,6 +262,21 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         NULL
     )};
 
+    // Create set max volume button
+    const HWND setMaxVolumebuttonHwnd{CreateWindow(
+        L"BUTTON",
+        L"Set Max Volume",
+        WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
+
+        // Set PIN button position and size
+        x + 170, 150, 120, 30,
+
+        hwnd,
+        (HMENU)2,
+        GetModuleHandle(NULL),
+        NULL
+    )};
+
     // Create set PIN button
     const HWND setPINbuttonHwnd{CreateWindow(
         L"BUTTON",
@@ -254,7 +284,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         WS_CHILD | WS_VISIBLE | BS_PUSHBUTTON,
 
         // Set PIN button position and size
-        x + 170, 150, 120, 30,
+        x + 170, 250, 120, 30,
 
         hwnd,
         (HMENU)2,
@@ -282,8 +312,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     {
         GetMonitorInfo(hMonitor, &monitorInfo);
 
-        windowPos.x = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.right / 1.5f;
-        windowPos.y = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.bottom / 1.5f;
+        windowPos.x = monitorInfo.rcMonitor.right - monitorInfo.rcMonitor.right / 1.5f - 50.0f;
+        windowPos.y = monitorInfo.rcMonitor.bottom - monitorInfo.rcMonitor.bottom / 1.5f - 50.0f;
     }
     else
     {
@@ -348,6 +378,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     // Message loop
     MSG msg{};
 
+    // Get current mute status
+    isMuted = IsMuted();
+
     while (true)
     {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -377,34 +410,42 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
         }
         else if (!isVolumeLocked)
         {
-            // Get mouse position
-            POINT mousePos{};
-            GetCursorPos(&mousePos);
-            ScreenToClient(hwnd, &mousePos);
-
-            const RECT sliderRect{x + 40, 50, x + 240, 80};
-
-            if (CheckCollisionMouseRect(mousePos, sliderRect))
+            if (currentVolume >= minVolume && currentVolume <= maxVolume)
             {
-                const float sliderValue{static_cast<float>(SendMessage(slider, TBM_GETPOS, 0, 0))};
-                currentVolume = sliderValue / 100.0f;
+                // Get mouse position
+                POINT mousePos{};
+                GetCursorPos(&mousePos);
+                ScreenToClient(hwnd, &mousePos);
 
-                SetMasterVolume(currentVolume);
+                const RECT sliderRect{x + 40, 50, x + 240, 80};
+
+                if (CheckCollisionMouseRect(mousePos, sliderRect))
+                {
+                    const float sliderValue{static_cast<float>(SendMessage(slider, TBM_GETPOS, 0, 0))};
+                    currentVolume = sliderValue / 100.0f;
+
+                    SetMasterVolume(currentVolume);
+                }
+                else
+                {
+                    currentVolume = GetMasterVolume();
+
+                    // Assuming currentVolume is a float value between 0.0 and 1.0 representing the volume level
+                    // Convert it to an integer value between 0 and 100 for the trackbar
+                    const int sliderValue{static_cast<int>(currentVolume * 100)};
+
+                    // Set the position of the slider
+                    SendMessage(slider, TBM_SETPOS, TRUE, sliderValue);
+
+                    // Set the range of the slider (0 to 100)
+                    SendMessage(slider, TBM_SETRANGEMIN, TRUE, 0);
+                    SendMessage(slider, TBM_SETRANGEMAX, TRUE, 100);
+                }
             }
-            else
+            else if (currentVolume > maxVolume)
             {
-                currentVolume = GetMasterVolume();
-
-                // Assuming currentVolume is a float value between 0.0 and 1.0 representing the volume level
-                // Convert it to an integer value between 0 and 100 for the trackbar
-                const int sliderValue{static_cast<int>(currentVolume * 100)};
-
-                // Set the position of the slider
-                SendMessage(slider, TBM_SETPOS, TRUE, sliderValue);
-
-                // Set the range of the slider (0 to 100)
-                SendMessage(slider, TBM_SETRANGEMIN, TRUE, 0);
-                SendMessage(slider, TBM_SETRANGEMAX, TRUE, 100);
+                currentVolume = maxVolume;
+                SetMasterVolume(currentVolume);
             }
 
             SetWindowText(lockUnlockbuttonHwnd, L"Lock Volume");
@@ -412,8 +453,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
         const bool isClickable{(strText == strPIN)};
 
-        EnableWindow(slider, !isVolumeLocked);
-        EnableWindow(lockUnlockbuttonHwnd, isClickable);
+        // Enable or disable controls based on state
+        EnableWindow(slider, !isVolumeLocked);           
+        EnableWindow(lockUnlockbuttonHwnd, isClickable); 
         EnableWindow(setPINbuttonHwnd, strPIN.empty());
 
         UpdateLayeredWindow(hwnd, NULL, &ptLocation, &size, hdcMem, &ptZero, RGB(0, 0, 0), &blend, ULW_ALPHA);
@@ -443,14 +485,14 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     // allocate resources associated with the window.
     case WM_CREATE:
     {
-        // Create the PIN textbox
-        textBox = CreateWindowEx(
+        // Create the max volume textbox
+        maxVolumeTextBox = CreateWindowEx(
             0,
             L"EDIT",
-            L"Enter PIN",
+            L"100",
             WS_VISIBLE | WS_CHILD | WS_BORDER,
 
-            // PIN textbox position and size
+            // Max Volume textBox position and size
             x + 40, 150, 120, 30,
 
             hwnd,
@@ -459,51 +501,123 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             NULL
         );
 
-        hCheckbox = CreateWindowEx(
+        // Create the PIN textbox
+        pinTextBox = CreateWindowEx(
+            0,
+            L"EDIT",
+            L"Enter PIN",
+            WS_VISIBLE | WS_CHILD | WS_BORDER,
+
+            // PIN textbox position and size
+            x + 40, 250, 120, 30,
+
+            hwnd,
+            NULL,
+            GetModuleHandle(NULL),
+            NULL
+        );
+
+        // Create the mute checkbox
+        hMuteCheckbox = CreateWindowEx(
+            0, L"BUTTON",
+            L"Mute",
+            WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_CHECKBOX,
+
+            // Position and size
+            340, 150, 60, 30,
+
+            hwnd,
+            NULL,
+            (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE),
+            NULL
+        );
+
+        // Create the toggle mute checkbox
+        hMuteToggleCheckbox = CreateWindowEx(
             0, L"BUTTON",  
             L"Lock Mute Toggle",   
             WS_TABSTOP | WS_VISIBLE | WS_CHILD | BS_CHECKBOX,
 
             // Position and size
-            340, 170, 140, 30,
+            340, 250, 140, 30,
             
             hwnd,          
             NULL,          
             (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE), 
             NULL          
         );
-        
-        SendMessage(hCheckbox, BM_SETCHECK, BST_CHECKED, 0);
+
+        SendMessage(hMuteToggleCheckbox, BM_SETCHECK, BST_CHECKED, 0);
 
     } break;
     // WM_COMMAND: This message is sent to a window when the user selects a menu item, 
     // clicks a button, or performs an action that generates a command from a control or menu.
     case WM_COMMAND:
     {
+        // The volume lock button
         if (LOWORD(wParam) == 1 && HIWORD(wParam) == BN_CLICKED)
         {
             isVolumeLocked = !isVolumeLocked;
+            
+            // Get the current mute status
             isMuted = IsMuted();
         }
 
+        // The button to set the max volume
         if (LOWORD(wParam) == 2 && HIWORD(wParam) == BN_CLICKED)
+        {
+            if (strMaxVolume.empty())
+            {
+                strMaxVolume = "100";
+            }
+
+            // Get the max volume; it should be more than 0 and less than or equal to 100
+            const unsigned int max{static_cast<unsigned int>((atoi(strMaxVolume.c_str()) > 100) ? 100 : atoi(strMaxVolume.c_str()))};
+
+            maxVolume = static_cast<float>(max/100.0f);
+        }
+
+        // The button to set the PIN
+        if (LOWORD(wParam) == 3 && HIWORD(wParam) == BN_CLICKED)
         {
             strPIN = strText;
         }
 
-        if (reinterpret_cast<HWND>(lParam) == textBox && HIWORD(wParam) == EN_CHANGE)
+        // PIN textbox
+        if (reinterpret_cast<HWND>(lParam) == pinTextBox && HIWORD(wParam) == EN_CHANGE)
         {
-            // Text has changed in the textbox, update the std::string
+            // Text has changed in the PIN textbox, update the std::string
             char buffer[256];
-            GetWindowTextA(textBox, buffer, sizeof(buffer));
+            GetWindowTextA(pinTextBox, buffer, sizeof(buffer));
             strText = buffer;
         }
 
-        if ((HWND)lParam == hCheckbox) 
+        // Max volume textbox
+        if (reinterpret_cast<HWND>(lParam) == maxVolumeTextBox && HIWORD(wParam) == EN_CHANGE)
+        {
+            // Text has changed in the max volume textbox, update the std::string
+            char buffer[256];
+            GetWindowTextA(maxVolumeTextBox, buffer, sizeof(buffer));
+            strMaxVolume = buffer;
+        }
+
+        // Update the mute volume
+        if ((HWND)lParam == hMuteCheckbox && !muteLock)
+        {
+            isMuted = !isMuted;
+
+            SetMute(isMuted);
+        }
+
+        // Update the mute checkbox
+        SendMessage(hMuteCheckbox, BM_SETCHECK, isMuted ? BST_CHECKED : BST_UNCHECKED, 0);
+
+        // Update the toggle mute and the checkbox
+        if ((HWND)lParam == hMuteToggleCheckbox) 
         {
             muteLock = !muteLock;
 
-            SendMessage(hCheckbox, BM_SETCHECK, muteLock ? BST_CHECKED : BST_UNCHECKED, 0);   
+            SendMessage(hMuteToggleCheckbox, BM_SETCHECK, muteLock ? BST_CHECKED : BST_UNCHECKED, 0);   
         }
 
     } break;
@@ -533,11 +647,16 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         // that allows an application to interact with a device, such as a display or printer, 
         // for drawing graphics or performing other operations.
         const HDC hdc{BeginPaint(hwnd, &ps)};
-        const TCHAR* text0{L"Set Volume Level:"};
-        const TCHAR* text1{L"Set PIN:"};
 
-        TextOut(hdc, x + 10, 14, text0, lstrlen(text0));
-        TextOut(hdc, x + 10, 124, text1, lstrlen(text1));
+        // Display text labels for volume and PIN settings
+        const TCHAR* text0{ L"Set Volume Level:" };
+        const TCHAR* text1{ L"Set Max Volume:" };
+        const TCHAR* text2{ L"Set PIN:" };
+
+        // Output the text at specified positions in the window
+        TextOut(hdc, x + 10, 14, text0, lstrlen(text0));  
+        TextOut(hdc, x + 10, 124, text1, lstrlen(text1));  
+        TextOut(hdc, x + 10, 224, text2, lstrlen(text2));
 
         EndPaint(hwnd, &ps);
 
