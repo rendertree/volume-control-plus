@@ -45,7 +45,7 @@ static bool isMuted{false};
 static bool muteLock{true};
 
 // Max volume
-static float maxVolume{0.4f};
+static float maxVolume{1.0f};
 
 // PIN textbox
 HWND pinTextBox{};
