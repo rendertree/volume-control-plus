@@ -492,7 +492,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             L"100",
             WS_VISIBLE | WS_CHILD | WS_BORDER,
 
-            // Max Volume textBox position and size
+            // Position and size
             x + 40, 150, 120, 30,
 
             hwnd,
@@ -508,7 +508,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
             L"Enter PIN",
             WS_VISIBLE | WS_CHILD | WS_BORDER,
 
-            // PIN textbox position and size
+            // Position and size
             x + 40, 250, 120, 30,
 
             hwnd,
@@ -566,6 +566,7 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         // The button to set the max volume
         if (LOWORD(wParam) == 2 && HIWORD(wParam) == BN_CLICKED)
         {
+            // The first condition is empty and the default max volume is 1.0f (100/100)
             if (strMaxVolume.empty())
             {
                 strMaxVolume = "100";
