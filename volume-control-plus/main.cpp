@@ -650,9 +650,9 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         const HDC hdc{BeginPaint(hwnd, &ps)};
 
         // Display text labels for volume and PIN settings
-        const TCHAR* text0{ L"Set Volume Level:" };
-        const TCHAR* text1{ L"Set Max Volume:" };
-        const TCHAR* text2{ L"Set PIN:" };
+        const TCHAR* text0{L"Set Volume Level:"};
+        const TCHAR* text1{L"Set Max Volume:"};
+        const TCHAR* text2{L"Set PIN:"};
 
         // Output the text at specified positions in the window
         TextOut(hdc, x + 10, 14, text0, lstrlen(text0));  
@@ -717,10 +717,16 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
     case WM_SYSCOMMAND:
     {
         // Disable the "Restore Down" (Maximize) functionality
-        if (wParam == SC_MAXIMIZE) return 0;
-
+        if (wParam == SC_MAXIMIZE)
+        {
+            return 0;
+        }
+        
         // Disable the close functionality when the volume is locked
-        if (wParam == SC_CLOSE && isVolumeLocked) return 0;
+        if (wParam == SC_CLOSE && isVolumeLocked)
+        {
+            return 0;
+        }
 
     } break;
     // WM_DESTROY: This message is sent to a window when it is being destroyed. 
