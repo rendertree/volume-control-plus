@@ -330,7 +330,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     const HICON hCustomIcon{(HICON)LoadImage(NULL, L"lock.ico", IMAGE_ICON, 0, 0, LR_LOADFROMFILE)};
 
     // Initialize the NOTIFYICONDATA structure
-    memset(&nid, 0, sizeof(NOTIFYICONDATA));
+    std::memset(&nid, 0, sizeof(NOTIFYICONDATA));
     nid.cbSize = sizeof(NOTIFYICONDATA);
     nid.hWnd   = hwnd;
     nid.uID    = 1;
