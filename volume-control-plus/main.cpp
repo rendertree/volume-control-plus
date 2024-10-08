@@ -21,7 +21,6 @@
 #include <chrono>
 #include <thread>
 #include <string>
-#include <stdint.h>
 #include <windows.h>
 #include <commctrl.h>
 #include <mmdeviceapi.h>
@@ -64,7 +63,7 @@ static std::string strText{};
 static std::string strPIN{};
 
 // Max volume string
-static std::string strMaxVolume{};
+static std::string strMaxVolume{"100"};
 
 constexpr float minVolume{0.0f};
 constexpr uint8_t x{30};
@@ -566,12 +565,6 @@ static LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM l
         // The button to set the max volume
         if (LOWORD(wParam) == 2 && HIWORD(wParam) == BN_CLICKED)
         {
-            // The first condition is empty and the default max volume is 1.0f (100/100)
-            if (strMaxVolume.empty())
-            {
-                strMaxVolume = "100";
-            }
-
             // Get the max volume; it should be more than 0 and less than or equal to 100
             const unsigned int max{static_cast<unsigned int>((atoi(strMaxVolume.c_str()) > 100) ? 100 : atoi(strMaxVolume.c_str()))};
 
