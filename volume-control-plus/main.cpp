@@ -407,7 +407,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
             SetWindowText(lockUnlockbuttonHwnd, L"Unlock Volume");
         }
-        else if (!isVolumeLocked)
+        else
         {
             if (currentVolume >= minVolume && currentVolume <= maxVolume)
             {
