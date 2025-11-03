@@ -21,6 +21,7 @@
 #include <chrono>
 #include <thread>
 #include <string>
+#include <print>
 #include <windows.h>
 #include <commctrl.h>
 #include <mmdeviceapi.h>
@@ -380,6 +381,14 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     // Get current mute status
     isMuted = IsMuted();
 
+    AllocConsole();
+    FILE* fp;
+    freopen_s(&fp, "CONOUT$", "w", stdout);
+    freopen_s(&fp, "CONOUT$", "w", stderr);
+    freopen_s(&fp, "CONIN$", "r", stdin);
+
+    std::print("Debug console initialized!\n");
+
     while (true)
     {
         while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
@@ -459,6 +468,10 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
 
         UpdateLayeredWindow(hwnd, NULL, &ptLocation, &size, hdcMem, &ptZero, RGB(0, 0, 0), &blend, ULW_ALPHA);
 
+        // --- DEBUG OUTPUT using std::print() ---
+        int volumePercent = static_cast<int>(currentVolume * 100);
+        std::print("Current volume: {}%\n", volumePercent);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
@@ -467,6 +480,7 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _
     DeleteDC(hdcMem);
     DeleteObject(hBitmap);
     DestroyIcon(hCustomIcon);
+    FreeConsole();
 
     return msg.wParam;
 }
